@@ -1,0 +1,69 @@
+- name: configure Datanode using Ansible
+  hosts: datanode
+  gather_facts: no
+
+  vars_prompt:
+  - name: datanode_dir
+    prompt: "Enter datanode directory name you want to create"
+    private: no
+
+  - name: namenode_ip
+    prompt: "Enter namenode ip eg 1.2.3.4"
+    private: no
+
+  - name: hadoop_port
+    prompt: "Enter hadoop port"
+    private: no
+
+  tasks:
+  - name: copying hadoop software
+    copy:
+     src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+     dest: "/root"
+
+  - name: copying java software
+    copy:
+     src: "/root/jdk-8u171-linux-x64.rpm"
+     dest: "/root"
+
+  - name: installing java packages
+    shell: "rpm -i /root/jdk-8u171-linux-x64.rpm"
+   
+
+  - name: installing hadoop packages
+    shell: "rpm -i /root/hadoop-1.2.1-1.x86_64.rpm --force"
+    
+
+  - name: creating datanode directory
+    file:
+     path: "{{ datanode_dir }}"
+     state: directory
+
+  - name: copying hdfs-site file
+    template:
+     src: "/root/hadoop_ansible/hdfs-site.xml"
+     dest: "/etc/hadoop/hdfs-site.xml"
+
+  - name: copying core-site file
+    template:
+     src: "/root/hadoop_ansible/core-site.xml"
+     dest: "/etc/hadoop/core-site.xml"
+
+  - name: starting service
+    shell: "hadoop-daemon.sh start datanode"
+
+  
+  - name: success code
+    shell: "jps"
+    register: success
+  
+  - debug:
+     var: success.stdout_lines 
+
+  - name: dfsadmin report
+    shell: "hadoop dfsadmin -report"
+    register: report   
+  
+  - debug:  
+     var: report.stdout_lines
+
